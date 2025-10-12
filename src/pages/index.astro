@@ -1,8 +1,9 @@
 ---
 import Button from "../components/button.astro";
-import Projects from "../components/home/projects.astro";
 import Separator from "../components/home/separator.astro";
 import Writings from "../components/home/writings.astro";
+import Appreciation from "../components/home/appreciation.astro";
+import Journey from "../components/home/journey.astro";
 import Layout from "../layouts/main.astro";
 ---
 
@@ -69,8 +70,10 @@ import Layout from "../layouts/main.astro";
     </div>
   </div>
 
-  <Separator text="Check out my projects" />
-  <Projects />
   <Separator text="Some of my writing" />
   <Writings />
+  <Separator text="赏析" />
+  <Appreciation />
+  <Separator text="游记" />
+  <Journey />
 </Layout>

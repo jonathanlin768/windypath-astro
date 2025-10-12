@@ -8,6 +8,10 @@
 		"url": "/posts"
 	},
 	{
+		"name": "归档",
+		"url": "/archives"
+	},
+	{
 		"name": "Projects",
 		"url": "/projects"
 	},
