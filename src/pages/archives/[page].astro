@@ -1,0 +1,194 @@
+---
+import PageHeading from "../../components/page-heading.astro";
+import Layout from "../../layouts/main.astro";
+import { getCollection } from "astro:content";
+import type { Page } from "astro";
+
+export async function getStaticPaths({ paginate }: any) {
+  // 获取所有三个类别的文章
+  const allPosts = await getCollection("post");
+  const allAppreciation = await getCollection("appreciation");
+  const allJourney = await getCollection("journey");
+
+  // 合并所有文章并添加类型标记
+  const allArticles = [
+    ...allPosts.map(post => ({ ...post, type: "技术", baseUrl: "/post" })),
+    ...allAppreciation.map(item => ({ ...item, type: "赏析", baseUrl: "/appreciation" })),
+    ...allJourney.map(item => ({ ...item, type: "游记", baseUrl: "/journey" }))
+  ];
+
+  // 解析日期函数
+  function parseDate(dateStr: string) {
+    const [month, day, year] = dateStr.split(" ");
+    return new Date(`${month} ${parseInt(day)}, ${year}`);
+  }
+
+  // 为每篇文章添加解析后的日期
+  const articlesWithDates = allArticles.map(article => ({
+    ...article,
+    parsedDate: parseDate(article.data.dateFormatted),
+    year: parseDate(article.data.dateFormatted).getFullYear()
+  }));
+
+  // 按日期排序（最新的在前）
+  const sortedArticles = articlesWithDates.sort((a, b) => 
+    b.parsedDate.getTime() - a.parsedDate.getTime()
+  );
+
+  return paginate(sortedArticles, { pageSize: 10 });
+}
+
+const { page }: { page: Page<any> } = Astro.props;
+
+// 按年份分组当前页的文章
+const articlesByYear = page.data.reduce((acc: any, article: any) => {
+  const year = article.year;
+  if (!acc[year]) {
+    acc[year] = [];
+  }
+  acc[year].push(article);
+  return acc;
+}, {});
+
+// 获取所有年份并排序（最新的在前）
+const years = Object.keys(articlesByYear).sort((a, b) => Number(b) - Number(a));
+---
+
+<Layout title={`归档 - 第 ${page.currentPage} 页`}>
+  <section class="relative z-20 max-w-2xl mx-auto my-12 px-7 lg:px-0 min-h-[calc(100vh-300px)]">
+    <PageHeading
+      title={`归档`}
+      description="按年份浏览所有文章、赏析和游记的归档。"
+    />
+
+    <div class="z-50 flex flex-col w-full gap-8 my-8">
+      {years.map((year) => (
+        <div class="space-y-5">
+          <h2 class="text-2xl font-bold text-neutral-900 dark:text-neutral-100 pb-3 border-b border-neutral-200 dark:border-neutral-800">
+            {year}年
+          </h2>
+          <div class="flex flex-col gap-5">
+            {articlesByYear[year].map((article: any) => (
+              <div
+                class="relative border border-transparent border-dashed cursor-pointer p-5 group rounded-2xl"
+                onclick={`location.href = '${article.baseUrl}/${article.slug}'`}
+              >
+                <div class="absolute inset-0 z-20 w-full h-full duration-300 ease-out bg-white border border-dashed dark:bg-neutral-950 rounded-2xl border-neutral-300 dark:border-neutral-600 group-hover:-translate-x-1 group-hover:-translate-y-1" />
+                <div class="absolute inset-0 z-10 w-full h-full duration-300 ease-out border border-dashed rounded-2xl border-neutral-300 dark:border-neutral-600 group-hover:translate-x-1 group-hover:translate-y-1" />
+                <div class="relative z-30 duration-300 ease-out group-hover:-translate-x-1 group-hover:-translate-y-1">
+                  <div class="flex items-start justify-between gap-3 mb-2">
+                    <h3 class="flex items-center flex-1">
+                      <a
+                        href={`${article.baseUrl}/${article.slug}`}
+                        class="text-base font-bold leading-tight tracking-tight dark:text-neutral-100"
+                      >
+                        {article.data.title}
+                      </a>
+                      <svg
+                        class="group-hover:translate-x-0 flex-shrink-0 translate-y-0.5 -translate-x-1 w-2.5 h-2.5 stroke-current ml-1 transition-all ease-in-out duration-200 transform"
+                        viewBox="0 0 13 15"
+                        version="1.1"
+                        xmlns="http://www.w3.org/2000/svg"
+                        xmlns:xlink="http://www.w3.org/1999/xlink"
+                      >
+                        <g
+                          stroke="none"
+                          stroke-width="1"
+                          fill="none"
+                          fill-rule="evenodd"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                        >
+                          <g
+                            id="svg"
+                            transform="translate(0.666667, 2.333333)"
+                            stroke="currentColor"
+                            stroke-width="2.4"
+                          >
+                            <g>
+                              <polyline
+                                class="transition-all duration-200 ease-out opacity-0 delay-0 group-hover:opacity-100"
+                                points="5.33333333 0 10.8333333 5.5 5.33333333 11"
+                              />
+                              <line
+                                class="transition-all duration-200 ease-out transform -translate-x-1 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 group-hover:ml-0"
+                                x1="10.8333333"
+                                y1="5.5"
+                                x2="0.833333333"
+                                y2="5.16666667"
+                              />
+                            </g>
+                          </g>
+                        </g>
+                      </svg>
+                    </h3>
+                    <span class="flex-shrink-0 px-2 py-1 text-xs font-medium rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
+                      {article.type}
+                    </span>
+                  </div>
+                  <p class="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+                    {article.data.description}
+                  </p>
+                  <div class="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                    {article.data.dateFormatted}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <!-- 分页导航 -->
+    {(page.lastPage > 1) && (
+      <nav class="flex items-center justify-center gap-2 mt-12">
+        {page.url.prev ? (
+          <a
+            href={page.url.prev}
+            class="px-4 py-2 text-sm font-medium border border-black/10 dark:border-white/10 rounded-lg hover:border-black/20 dark:hover:border-white/20 transition-all hover:shadow-md"
+          >
+            上一页
+          </a>
+        ) : (
+          <span class="px-4 py-2 text-sm font-medium text-black/30 dark:text-white/30 border border-black/5 dark:border-white/5 rounded-lg cursor-not-allowed">
+            上一页
+          </span>
+        )}
+
+        <div class="flex items-center gap-2">
+          {Array.from({ length: page.lastPage }, (_, i) => i + 1).map((pageNum) => {
+            const isCurrentPage = pageNum === page.currentPage;
+            const pageUrl = pageNum === 1 ? '/archives' : `/archives/${pageNum}`;
+            
+            return isCurrentPage ? (
+              <span class="px-4 py-2 text-sm font-medium bg-black text-white dark:bg-white dark:text-black rounded-lg">
+                {pageNum}
+              </span>
+            ) : (
+              <a
+                href={pageUrl}
+                class="px-4 py-2 text-sm font-medium border border-black/10 dark:border-white/10 rounded-lg hover:border-black/20 dark:hover:border-white/20 transition-all hover:shadow-md"
+              >
+                {pageNum}
+              </a>
+            );
+          })}
+        </div>
+
+        {page.url.next ? (
+          <a
+            href={page.url.next}
+            class="px-4 py-2 text-sm font-medium border border-black/10 dark:border-white/10 rounded-lg hover:border-black/20 dark:hover:border-white/20 transition-all hover:shadow-md"
+          >
+            下一页
+          </a>
+        ) : (
+          <span class="px-4 py-2 text-sm font-medium text-black/30 dark:text-white/30 border border-black/5 dark:border-white/5 rounded-lg cursor-not-allowed">
+            下一页
+          </span>
+        )}
+      </nav>
+    )}
+  </section>
+</Layout>
