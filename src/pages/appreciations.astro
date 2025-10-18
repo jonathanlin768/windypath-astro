@@ -1,0 +1,18 @@
+---
+import PageHeading from "../components/page-heading.astro";
+import Layout from "../layouts/main.astro";
+import AppreciationsLoop from "../components/appreciations-loop.astro";
+---
+
+<Layout title="赏析">
+  <section class="relative z-20 max-w-2xl mx-auto my-12 px-7 lg:px-0">
+    <PageHeading
+      title="赏析"
+      description="分享一些值得欣赏的作品、文章和思考。"
+    />
+
+    <div class="z-50 flex flex-col items-stretch w-full gap-5 my-8">
+      <AppreciationsLoop count="999999999" />
+    </div>
+  </section>
+</Layout>
