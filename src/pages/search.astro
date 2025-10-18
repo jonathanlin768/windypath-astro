@@ -1,0 +1,154 @@
+---
+import PageHeading from "../components/page-heading.astro";
+import Layout from "../layouts/main.astro";
+import { getCollection } from "astro:content";
+
+// 获取所有博客文章
+const allPosts = await getCollection("post");
+const allAppreciations = await getCollection("appreciation");
+const allJourneys = await getCollection("journey");
+
+// 合并所有内容并添加类型标识
+const allContent = [
+  ...allPosts.map(post => ({ ...post, type: "post", typeName: "文章" })),
+  ...allAppreciations.map(app => ({ ...app, type: "appreciation", typeName: "赏析" })),
+  ...allJourneys.map(journey => ({ ...journey, type: "journey", typeName: "游记" }))
+];
+
+// 按日期排序（最新的在前）
+allContent.sort((a, b) => {
+  return new Date(b.data.dateFormatted).getTime() - new Date(a.data.dateFormatted).getTime();
+});
+---
+
+<Layout title="搜索">
+  <section class="relative z-20 max-w-2xl mx-auto my-12 px-7 lg:px-0 min-h-[calc(100vh-300px)]">
+    <PageHeading
+      title="搜索"
+      description="搜索博客文章，找到你感兴趣的内容。"
+    />
+
+    <div class="z-50 flex flex-col items-stretch w-full gap-5 my-8">
+      <!-- 搜索输入框 -->
+      <div class="relative">
+        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-black/40 dark:text-white/40 pointer-events-none">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <input
+          type="text"
+          id="search-input"
+          placeholder="输入关键词搜索..."
+          class="w-full pl-12 pr-4 py-3 text-base border border-black/10 dark:border-white/10 rounded-lg bg-white dark:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-black/20 dark:focus:ring-white/20 transition-all"
+        />
+        <div id="search-count" class="mt-2 text-sm text-black/60 dark:text-white/60 hidden">
+          找到 <span id="result-count">0</span> 条结果
+        </div>
+      </div>
+
+      <!-- 搜索结果 -->
+      <div id="search-results" class="hidden flex-col gap-5">
+      </div>
+
+      <!-- 无结果提示 -->
+      <div id="no-results" class="hidden text-center py-12 text-black/60 dark:text-white/60">
+        <p class="text-lg">未找到相关内容</p>
+        <p class="text-sm mt-2">请尝试其他关键词</p>
+      </div>
+    </div>
+  </section>
+
+  <script define:vars={{ allContent }}>
+    // 搜索功能
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results');
+    const noResults = document.getElementById('no-results');
+    const searchCount = document.getElementById('search-count');
+    const resultCount = document.getElementById('result-count');
+
+    // 防抖函数
+    function debounce(func, wait) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    // 执行搜索
+    function performSearch(query) {
+      const searchTerm = query.toLowerCase().trim();
+      
+      if (!searchTerm) {
+        // 如果搜索框为空，隐藏所有结果
+        searchResults.classList.add('hidden');
+        noResults.classList.add('hidden');
+        searchCount.classList.add('hidden');
+        return;
+      }
+
+      // 过滤内容
+      const results = allContent.filter(item => {
+        const title = item.data.title.toLowerCase();
+        const description = item.data.description.toLowerCase();
+        return title.includes(searchTerm) || description.includes(searchTerm);
+      });
+
+      renderResults(results);
+      
+      // 显示结果数量
+      searchCount.classList.remove('hidden');
+      resultCount.textContent = results.length;
+    }
+
+    // 渲染结果
+    function renderResults(results) {
+      if (results.length === 0) {
+        searchResults.classList.add('hidden');
+        noResults.classList.remove('hidden');
+        return;
+      }
+
+      noResults.classList.add('hidden');
+      searchResults.classList.remove('hidden');
+      searchResults.classList.add('flex');
+      
+      searchResults.innerHTML = results.map(item => `
+        <a
+          href="/${item.type}/${item.slug}/"
+          class="group block p-5 border border-black/10 dark:border-white/10 rounded-lg hover:border-black/20 dark:hover:border-white/20 transition-all hover:shadow-md"
+        >
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs px-2 py-1 rounded bg-black/5 dark:bg-white/5 text-black/60 dark:text-white/60">
+              ${item.typeName}
+            </span>
+            <time class="text-sm text-black/60 dark:text-white/60">
+              ${item.data.dateFormatted}
+            </time>
+          </div>
+          <h3 class="text-xl font-semibold mb-2 group-hover:text-black/80 dark:group-hover:text-white/80 transition-colors">
+            ${item.data.title}
+          </h3>
+          <p class="text-black/60 dark:text-white/60 line-clamp-2">
+            ${item.data.description}
+          </p>
+        </a>
+      `).join('');
+    }
+
+    // 添加搜索事件监听（使用防抖）
+    const debouncedSearch = debounce((e) => {
+      performSearch(e.target.value);
+    }, 300);
+
+    searchInput.addEventListener('input', debouncedSearch);
+
+    // 页面加载时自动聚焦搜索框
+    searchInput.focus();
+  </script>
+</Layout>
