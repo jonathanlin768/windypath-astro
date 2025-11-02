@@ -124,7 +124,7 @@ if received > 0:
 
 在这段源码中，我模仿Windows的ping程序，成功实现了类似的效果。
 
-![](../../assets/images/UdpResult.png)
+![](../../assets/images/udpResult.png)
 ## 关于可选练习的第二个问题
 
 我认为服务端这边需要在读取客户端发的消息中，提取客户端的发送时间，并将其与服务器当前时间相减而得到RTT时延，以此来判定是否超时。
