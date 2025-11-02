@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # 保持使用 Node.js v20
+          node-version: '22' # 保持使用 Node.js v22
           cache: 'npm' # 【修改点】将缓存设置为 npm
 
       # 3. 安装依赖 (使用 npm install)
